@@ -23,6 +23,9 @@ longer runs on any current system. This version is:
 
 👉 **New here? Read [GUIDE.md](GUIDE.md) for step-by-step setup with your robot.**
 
+Hardware observations for this robot (servos, wheels, eyes, chest LEDs)
+live in [`docs/SERVO_MAP.md`](docs/SERVO_MAP.md).
+
 ## Install
 
 ```bash
