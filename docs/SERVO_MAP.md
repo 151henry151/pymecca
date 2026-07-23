@@ -137,19 +137,44 @@ document before sending the next.
 | `0x0b` | set-name | Interactive **name recording** routine. Prompts to set the name after a beep; records spoken name; plays back **“my name is …”** using the recording; asks for confirmation; **yellow** button confirms; announces name has been set. (This unit was renamed from “Hunter” to “Robot” during probing.) |
 | `0x0c` | default-name-prompt | Asks whether to use the default name **“Meccanoid”**: *“Name robot: would you like to use my default name, Meccanoid? Press yellow button for yes, or blue button for no.”* Eyes **purple**; yellow/blue buttons blink while waiting; times out back to **blue** eyes if no press. |
 | `0x0d` | nudge-forward | Rolls **forward** roughly ~1 foot (no speech noted). |
-| `0x1d` | wake | Connect wake / “I'm awake”-style greeting family (seventeen `0x1d` bytes on connect) |
+| `0x0e` | nudge-back | Rolls **backward** roughly ~1 foot (same distance scale as `0x0d`; no speech noted). |
+| `0x0f` | turn-left-90 | Spins about **90° left** (counterclockwise) in place. |
+| `0x10` | turn-right-90 | Spins about **90° right** (clockwise) in place (confirmed twice). |
+| `0x11` | turn-right-180 | Spins about **180° clockwise** in place. |
+| `0x12` | laser-ready / ?error | Same laser-ready cue (confirmed twice). |
+| `0x13` | laser-ready / ?error | Same laser-ready cue. |
+| `0x14` | laser-ready / ?error | Same laser-ready cue. |
+| `0x15` | shutdown | **Shutdown** cue / noise; **eyes turn off** (power-down or deep sleep — confirm after power cycle). **Do not spam.** |
+| `0x16` | laser-ready / ?error | Same laser-ready cue (confirmed twice). |
+| `0x17` | lim-menu-voice | Spoken menu-style list (approx.): **Record LIM**, **LIM library**, **Choose settings**, **Go to settings**, **Help**, **Later**, **Main menu**. (Exact phrasing TBD if re-listened.) |
+| `0x18` | laser-ready / ?error | Same laser-ready cue. |
+| `0x19` | *(none)* | No audible/visible effect (tried twice; link still OK). |
+| `0x1a` | *(none)* | No audible/visible effect (tried twice). |
+| `0x1b` | laser-ready / ?error | Same laser-ready cue. |
+| `0x1c` | *(none)* | No audible/visible effect (tried twice). |
+| `0x1d` | laser-ready / ?error | **Single-arg** `behaviour 0x1d` = laser-ready (confirmed twice). The connect **wake** is different: seventeen `0x1d` payload bytes (`wake_frame()`), not yet re-probed here as a multi-arg command. |
+| `0x1e` | *(none)* | No audible/visible effect. |
+| `0x1f` | *(none)* | No audible/visible effect. |
+| `0x20` | *(none)* | No audible/visible effect. |
+| `0x21` | *(none)* | No audible/visible effect. |
 
-Note: `0x01`–`0x04` and `0x08` all produce the **same** cue. Hypothesis: this
-may be a generic **reject / unrecognized-command** tone — unproven until a
-clearly different ID (e.g. wake `0x1d`) is contrasted in the same session.
-`0x05`–`0x07` were silent.
+Note: `0x01`–`0x04`, `0x08`, `0x12`–`0x14`, `0x16`, `0x18`, `0x1b`, and
+single-arg `0x1d` all produce the **same** cue. Hypothesis: generic
+**reject / unrecognized-command** tone — still a guess. `0x05`–`0x07` were
+silent. **`0x15` powers the unit down** (or equivalent).
 
-### 2026-07-22 rapid sweep (IDs not yet isolated)
+### Batch probe `0x22`–`0x40` (2026-07-22)
 
-Earlier non-isolated burst mixed several IDs; the spoken systems-check is
-now attributed to **`0x0a`**. Remaining IDs from that burst (`0x10`,
-`0x15`, `0x1a`, …) still need isolated probes. Lights-out after the first
-run was likely loose power wiring, not this command.
+Non-isolated batch of single-arg behaviours in that range produced **no
+interesting motion or speech** on this unit (same “nothing” class as
+`0x19`–`0x21`). Not worth re-probing one-by-one unless APK / HCI evidence
+points at a specific ID.
+
+### Still open
+
+* Multi-arg `0x19` payloads other than the seventeen-`0x1d` wake frame
+* Whether “laser-ready” IDs are really rejects vs a named SFX bank
+* App-triggered behaviours not reachable as single-byte args
 
 ## How to extend this map
 
@@ -185,3 +210,12 @@ new findings under [Changelog](#changelog) below.
 - 2026-07-22: `0x0b` = set-name (record wake word; yellow confirms).
 - 2026-07-22: `0x0c` = default-name-prompt (“Meccanoid?”; yellow=yes, blue=no).
 - 2026-07-22: `0x0d` = nudge-forward (~1 foot).
+- 2026-07-22: `0x0e` = nudge-back (~1 foot).
+- 2026-07-22: `0x0f` = turn-left-90 (CCW).
+- 2026-07-22: `0x10` = turn-right-90 (CW).
+- 2026-07-22: `0x11` = turn-right-180 (CW).
+- 2026-07-22: `0x12`–`0x14` = laser-ready again.
+- 2026-07-22: `0x15` = shutdown (eyes off).
+- 2026-07-22: `0x16` = laser-ready; `0x17` = lim-menu-voice list; `0x18` = laser-ready.
+- 2026-07-22: `0x19`–`0x21` mostly silent; single-arg `0x1d` = laser-ready
+  (wake frame is multi-`0x1d`); batch `0x22`–`0x40` no interesting effect.

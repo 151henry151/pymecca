@@ -23,8 +23,12 @@ longer runs on any current system. This version is:
 
 👉 **New here? Read [GUIDE.md](GUIDE.md) for step-by-step setup with your robot.**
 
-Hardware observations for this robot (servos, wheels, eyes, chest LEDs)
-live in [`docs/SERVO_MAP.md`](docs/SERVO_MAP.md).
+Hardware observations for this robot (servos, wheels, eyes, chest LEDs,
+opcode-`0x19` behaviours) live in [`docs/SERVO_MAP.md`](docs/SERVO_MAP.md).
+
+Research archives (umplesplace lore, Smart Module / Arduino stack, MEBLUSY
+audit, APK fetch helper) are under [`docs/`](docs/) and
+[`third_party/`](third_party/README.md).
 
 ## Install
 

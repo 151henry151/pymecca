@@ -7,3 +7,6 @@ dist/
 venv/
 .pytest_cache/
 .ruff_cache/
+
+# Large binary — fetch with third_party/apk/fetch-apk.sh
+third_party/apk/*.apk

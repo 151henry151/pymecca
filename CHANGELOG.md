@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add observed hardware map for this Meccanoid (`docs/SERVO_MAP.md`): arm servo slots, wheels, eye colours, and chest LED positions
+- Add umplesplace Meccanoid lore archive and summary (`docs/UMPLESPLACE.md`, `docs/reference/umplesplace/`)
+- Add Smart Module / Arduino stack catalog (`docs/SMART_MODULE_STACK.md`) and mirror source trees under `third_party/`
+- Add MEBLUSY opcode audit (`docs/MEBLUSY.md`); confirm no BLE opcodes beyond classic pymecca
+- Add archived Android APK fetch helper (`third_party/apk/`) for reverse engineering
+- Mirror Meccanoid-Revival assets (Smart Module PDF, official library, construction manuals)
 
 ### Changed
 
@@ -21,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Map behaviour `0x0b` as the interactive set-name / wake-word recording routine
 - Map behaviour `0x0c` as the default-name (“Meccanoid”) yes/no prompt
 - Map behaviour `0x0d` as a short forward drive nudge
+- Map behaviour `0x0e` as a short backward drive nudge
+- Map behaviour `0x0f` as an in-place ~90° left / counterclockwise turn
+- Map behaviour `0x10` as an in-place ~90° right / clockwise turn
+- Map behaviour `0x11` as an in-place ~180° clockwise turn
+- Map behaviour `0x12`–`0x14` as the same laser-ready / possible-error cue
+- Map behaviour `0x15` as shutdown (eyes off)
+- Map behaviour `0x16` as laser-ready; `0x17` as LIM menu voice list; `0x18` as laser-ready
+- Map behaviour `0x19`–`0x21` and batch `0x22`–`0x40` as no interesting effect; note single-arg `0x1d` vs multi-`0x1d` wake
 
 ## [2.1.0] - 2026-07-22
 
