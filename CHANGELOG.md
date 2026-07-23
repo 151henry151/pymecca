@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add observed hardware map for this Meccanoid (`docs/SERVO_MAP.md`): arm servo slots, wheels, eye colours, and chest LED positions
 
+### Changed
+
+- Record mirrored left/right elbow front/back sense and shoulder up/down extremes in the hardware map
+
 ## [2.1.0] - 2026-07-22
 
 ### Added

@@ -21,9 +21,9 @@ reconciled.
 | Slot | Library name (may be wrong) | Joint | Observed motion |
 |---:|---|---|---|
 | 0 | `UNKNOWN_0` | Left shoulder | Raises / lowers the left arm at the shoulder |
-| 1 | `RIGHT_ELBOW` | Left elbow | Bends the left elbow |
+| 1 | `RIGHT_ELBOW` | Left elbow | See direction notes — sense is mirrored vs the right elbow |
 | 2 | `RIGHT_SHOULDER` | Right shoulder | Raises / lowers the right arm at the shoulder |
-| 3 | `LEFT_SHOULDER` | Right elbow | `0x00` → hand in front of the robot; toward `0xff` → hand behind the robot |
+| 3 | `LEFT_SHOULDER` | Right elbow | See direction notes |
 
 ## No servo motion
 
@@ -36,12 +36,17 @@ reconciled.
 
 On this humanoid build, only slots **0–3** appear wired to arm servos.
 
-## Direction notes (partial)
+## Direction notes
+
+### Slot 0 — left shoulder
+
+- Toward logical `0x00`: arm **up** (pointing at the sky).
+- Toward logical `0xff` / `0xe0`: arm **down**.
 
 ### Slot 2 — right shoulder
 
-- `raise right arm` alias uses `0xff` (arm up).
-- `lower right arm` alias uses `0x80` (centred).
+- `raise right arm` / logical `0xff`: arm **up** (pointing at the sky).
+- `lower right arm` / logical `0x80`: centred.
 - Further down was observed around `0x20`.
 
 ### Slot 3 — right elbow
@@ -51,8 +56,13 @@ On this humanoid build, only slots **0–3** appear wired to arm servos.
 
 ### Slot 1 — left elbow
 
-- Logical `0xff` and `0x00` both produced visible elbow motion; exact
-  front/back sense not fully written down yet.
+Sense is **opposite** the right elbow (mirrored):
+
+- Logical `0xff`: forearm/hand toward the **front** of the robot.
+- Logical `0x00`: forearm/hand toward the **back** of the robot.
+
+To point both raised arms forward: `servo 2 0xff`, `servo 0 0x00`,
+`servo 3 0x00`, `servo 1 0xff`.
 
 ## Wheels (`drive LEFT RIGHT`)
 
@@ -112,3 +122,6 @@ new findings under [Changelog](#changelog) below.
   slots 4–7 no servo motion; both drive channels confirmed; left foot
   roller can bind; eye colours confirmed; chest LEDs 0–3 mapped
   blue/red/green/yellow right→left).
+- 2026-07-22: Record shoulder up/down extremes; left elbow front/back is
+  mirrored vs right elbow (`0xff` = front on the left, `0x00` = front on
+  the right).
