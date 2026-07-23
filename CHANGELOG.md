@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add archived Android APK fetch helper (`third_party/apk/`) for reverse engineering
 - Mirror Meccanoid-Revival assets (Smart Module PDF, official library, construction manuals)
 - Add stock APK reverse-engineering notes (`docs/APK_ANALYSIS.md`): official `MB_Commands` opcode map, GATT `FFF0`/`FFF1`/`FFF2`, PlayPreset vs PlayLIM
+- Add `right hand forward` / `put right hand out in front` pose alias (shoulder `0x80`, elbow `0x00`)
 
 ### Changed
 
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Map behaviour `0x15` as shutdown (eyes off)
 - Map behaviour `0x16` as laser-ready; `0x17` as LIM menu voice list; `0x18` as laser-ready
 - Map behaviour `0x19`–`0x21` and batch `0x22`–`0x40` as no interesting effect; note single-arg `0x1d` vs multi-`0x1d` wake
+- Record confirmed “right hand out in front” pose in the hardware map (not shoulder-up `0xff`)
 
 ## [2.1.0] - 2026-07-22
 

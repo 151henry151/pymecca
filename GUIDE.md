@@ -155,6 +155,7 @@ short-lived client: it sends one line and exits; the robot stays connected.
 Useful aliases (also work in `repl`):
 
 * `raise right arm` / `lower right arm` (and left; optional `the`)
+* `right hand forward` / `put right hand out in front` (shoulder centre + elbow front)
 * `eyes red|green|blue|white|off|yellow|magenta|cyan`
 
 By default `session start` detaches to the background and logs to

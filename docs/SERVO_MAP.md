@@ -46,8 +46,9 @@ On this humanoid build, only slots **0–3** appear wired to arm servos.
 ### Slot 2 — right shoulder
 
 - `raise right arm` / logical `0xff`: arm **up** (pointing at the sky).
-- `lower right arm` / logical `0x80`: centred.
-- Further down was observed around `0x20`.
+- `lower right arm` / logical `0x80`: centred (also the shoulder target for
+  “hand out in front”).
+- Further down was observed around `0x20`; full down toward `0x00`.
 
 ### Slot 3 — right elbow
 
@@ -61,8 +62,14 @@ Sense is **opposite** the right elbow (mirrored):
 - Logical `0xff`: forearm/hand toward the **front** of the robot.
 - Logical `0x00`: forearm/hand toward the **back** of the robot.
 
-To point both raised arms forward: `servo 2 0xff`, `servo 0 0x00`,
-`servo 3 0x00`, `servo 1 0xff`.
+## Confirmed poses
+
+| Pose | Alias | Commands |
+|---|---|---|
+| Right hand out in front | `right hand forward` / `put right hand out in front` | `servo 2 0x80`, `servo 3 0x00` |
+
+Notes: shoulder at `0xff` is straight up, **not** “hand forward”. Elbow
+must be `0x00` (front) with the shoulder centred.
 
 ## Wheels (`drive LEFT RIGHT`)
 
@@ -225,3 +232,5 @@ new findings under [Changelog](#changelog) below.
 - 2026-07-22: `0x16` = laser-ready; `0x17` = lim-menu-voice list; `0x18` = laser-ready.
 - 2026-07-22: `0x19`–`0x21` mostly silent; single-arg `0x1d` = laser-ready
   (wake frame is multi-`0x1d`); batch `0x22`–`0x40` no interesting effect.
+- 2026-07-23: Confirmed pose “right hand out in front” =
+  shoulder slot 2 `0x80` + elbow slot 3 `0x00` (not shoulder `0xff`).

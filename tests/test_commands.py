@@ -64,6 +64,27 @@ def test_lower_the_left_arm_alias():
     assert bot.calls == [("servo", Servo.LEFT_SHOULDER, 0x80)]
 
 
+def test_right_hand_forward_alias():
+    bot = FakeBot()
+    result = _run(dispatch(bot, "put the right hand out in front of you"))
+    assert result.outcome == CommandOutcome.OK
+    assert result.message == "right hand forward"
+    assert bot.calls == [
+        ("servo", 2, 0x80),
+        ("servo", 3, 0x00),
+    ]
+
+
+def test_right_hand_forward_short_alias():
+    bot = FakeBot()
+    result = _run(dispatch(bot, "right hand forward"))
+    assert result.ok
+    assert bot.calls == [
+        ("servo", 2, 0x80),
+        ("servo", 3, 0x00),
+    ]
+
+
 def test_eyes_named_colour():
     bot = FakeBot()
     result = _run(dispatch(bot, "eyes red"))

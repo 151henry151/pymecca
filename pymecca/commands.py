@@ -59,6 +59,7 @@ Commands:
   behaviour B [...]    raw opcode-0x19 bytes (experiment!)
   raw B B B ...        send 18 raw bytes (checksum added for you)
   raise|lower left|right arm
+  right hand forward   right hand out in front (shoulder centre + elbow front)
   help                 this text
   quit                 disconnect and exit (repl / session shutdown from repl)
 """
@@ -77,6 +78,13 @@ _EYE_COLOURS = {
 
 _ARM_RAISE = 0xFF
 _ARM_LOWER = 0x80
+
+# Observed on this humanoid build (see docs/SERVO_MAP.md): slot numbers,
+# not stock Servo enum names (those disagree with the wiring).
+_RIGHT_SHOULDER_SLOT = 2
+_RIGHT_ELBOW_SLOT = 3
+_RIGHT_HAND_FORWARD_SHOULDER = 0x80
+_RIGHT_HAND_FORWARD_ELBOW = 0x00
 
 _SHOULDER = {
     "right": Servo.RIGHT_SHOULDER,
@@ -123,6 +131,22 @@ def _parse_arm_alias(parts: list[str]) -> tuple[str, str] | None:
     return action, side
 
 
+def _is_right_hand_forward(parts: list[str]) -> bool:
+    """
+    Match short or long forms of the confirmed right-hand-forward pose.
+    """
+    words = [p.lower() for p in parts]
+    # Drop filler words so phrasing can vary.
+    core = [w for w in words if w not in {"the", "a", "of", "you", "your", "put"}]
+    if core == ["right", "hand", "forward"]:
+        return True
+    if core == ["right", "hand", "out", "in", "front"]:
+        return True
+    if core == ["right", "hand", "out", "front"]:
+        return True
+    return False
+
+
 async def dispatch(bot: RobotCommands, line: str) -> CommandResult:
     """
     Execute one command line against ``bot``.
@@ -142,6 +166,11 @@ async def dispatch(bot: RobotCommands, line: str) -> CommandResult:
             value = _ARM_RAISE if action == "raise" else _ARM_LOWER
             await bot.servo(_SHOULDER[side], value)
             return _ok(f"{action} {side} arm")
+
+        if _is_right_hand_forward(parts):
+            await bot.servo(_RIGHT_SHOULDER_SLOT, _RIGHT_HAND_FORWARD_SHOULDER)
+            await bot.servo(_RIGHT_ELBOW_SLOT, _RIGHT_HAND_FORWARD_ELBOW)
+            return _ok("right hand forward")
 
         if cmd in ("quit", "exit", "q"):
             return CommandResult(CommandOutcome.QUIT)
