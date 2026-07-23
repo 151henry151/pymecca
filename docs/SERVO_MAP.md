@@ -102,6 +102,55 @@ below are from the **robot's perspective**, listed right → left:
 
 So left → right on the robot: yellow (3), green (2), red (1), blue (0).
 
+## Behaviours / speech (`behaviour …`, opcode `0x19`)
+
+Canned sounds and phrases live here — not free-form TTS. Frames are
+`0x19` plus up to 17 argument bytes (see `pymecca.protocol.behaviour_frame`).
+
+### Voice UI (on-robot, not BLE)
+
+With **blue eyes**, the Meccabrain is in name-listening mode. It periodically
+prompts along the lines of: remember, when my eyes are blue, I'm listening
+for my name — then plays the **recorded wake-word name**. That name is set
+via behaviour **`0x0b`** (interactive mic recording + yellow to confirm),
+not by sending raw audio over BLE from pymecca. Saying the name (or using
+the front buttons / app) is how you interact with listening mode; BLE can
+still work while eyes are blue if nothing else holds the link.
+
+### Known (isolated probes)
+
+Probe protocol: send **one** `behaviour` ID, wait for a human report, then
+document before sending the next.
+
+| ID | Nickname | Observed |
+|---:|---|---|
+| `0x01` | laser-ready / ?error | Same SFX as `0x02`–`0x04` |
+| `0x02` | laser-ready / ?error | “Pzooow” + “bedoop” chirp |
+| `0x03` | laser-ready / ?error | Same as above |
+| `0x04` | laser-ready / ?error | Same as above |
+| `0x05` | *(none)* | No audible/visible effect (tried twice) |
+| `0x06` | *(none)* | No audible/visible effect |
+| `0x07` | *(none)* | No audible/visible effect |
+| `0x08` | laser-ready / ?error | Same laser-ready cue as `0x01`–`0x04` |
+| `0x09` | lim-teach-prompt | Eyes go **purple**; spoken button help: **green** = go forward, **red** = go back, **yellow** = save, **blue** = exit. After a long pause: **“exiting to main menu”**, eyes **green**. Likely enters (then times out of) a L.I.M. / teach mode. |
+| `0x0a` | systems-check | Full self-test routine. Spoken outline: **“Initiating system check. Reading battery level. Battery, full charge. Testing motor functions. Stand back!”** then drive: reverse, forward, turn right, turn left; **“performance optimal”** (or “functional”); **“testing servo functions”** + arm motion; further line(s); **“testing metabrain”** + ding; **“systems check 100% returning to main menu”**; eyes **green**. (This was the long routine from the earlier non-isolated sweep.) |
+| `0x0b` | set-name | Interactive **name recording** routine. Prompts to set the name after a beep; records spoken name; plays back **“my name is …”** using the recording; asks for confirmation; **yellow** button confirms; announces name has been set. (This unit was renamed from “Hunter” to “Robot” during probing.) |
+| `0x0c` | default-name-prompt | Asks whether to use the default name **“Meccanoid”**: *“Name robot: would you like to use my default name, Meccanoid? Press yellow button for yes, or blue button for no.”* Eyes **purple**; yellow/blue buttons blink while waiting; times out back to **blue** eyes if no press. |
+| `0x0d` | nudge-forward | Rolls **forward** roughly ~1 foot (no speech noted). |
+| `0x1d` | wake | Connect wake / “I'm awake”-style greeting family (seventeen `0x1d` bytes on connect) |
+
+Note: `0x01`–`0x04` and `0x08` all produce the **same** cue. Hypothesis: this
+may be a generic **reject / unrecognized-command** tone — unproven until a
+clearly different ID (e.g. wake `0x1d`) is contrasted in the same session.
+`0x05`–`0x07` were silent.
+
+### 2026-07-22 rapid sweep (IDs not yet isolated)
+
+Earlier non-isolated burst mixed several IDs; the spoken systems-check is
+now attributed to **`0x0a`**. Remaining IDs from that burst (`0x10`,
+`0x15`, `0x1a`, …) still need isolated probes. Lights-out after the first
+run was likely loose power wiring, not this command.
+
 ## How to extend this map
 
 With a live session:
@@ -125,3 +174,14 @@ new findings under [Changelog](#changelog) below.
 - 2026-07-22: Record shoulder up/down extremes; left elbow front/back is
   mirrored vs right elbow (`0xff` = front on the left, `0x00` = front on
   the right).
+- 2026-07-22: Behaviour sweep produced spoken “initiating systems check”,
+  clockwise spin, then apparent shutdown; IDs not yet isolated.
+- 2026-07-22: Isolated `0x01`–`0x03` all play the same laser-ready SFX
+  (“pzooow” + “bedoop”); confirmed back-to-back.
+- 2026-07-22: `0x05`–`0x07` silent; `0x08` laser-ready again; `0x09`
+  purple-eyes L.I.M./teach prompt then “exiting to main menu” / green eyes.
+- 2026-07-22: `0x0a` = full systems-check (battery, motors, servos,
+  metabrain; ends “systems check 100% returning to main menu”).
+- 2026-07-22: `0x0b` = set-name (record wake word; yellow confirms).
+- 2026-07-22: `0x0c` = default-name-prompt (“Meccanoid?”; yellow=yes, blue=no).
+- 2026-07-22: `0x0d` = nudge-forward (~1 foot).
