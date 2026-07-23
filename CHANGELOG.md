@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add MEBLUSY opcode audit (`docs/MEBLUSY.md`); confirm no BLE opcodes beyond classic pymecca
 - Add archived Android APK fetch helper (`third_party/apk/`) for reverse engineering
 - Mirror Meccanoid-Revival assets (Smart Module PDF, official library, construction manuals)
+- Add stock APK reverse-engineering notes (`docs/APK_ANALYSIS.md`): official `MB_Commands` opcode map, GATT `FFF0`/`FFF1`/`FFF2`, PlayPreset vs PlayLIM
 
 ### Changed
 

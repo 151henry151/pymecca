@@ -27,7 +27,8 @@ Hardware observations for this robot (servos, wheels, eyes, chest LEDs,
 opcode-`0x19` behaviours) live in [`docs/SERVO_MAP.md`](docs/SERVO_MAP.md).
 
 Research archives (umplesplace lore, Smart Module / Arduino stack, MEBLUSY
-audit, APK fetch helper) are under [`docs/`](docs/) and
+audit, APK fetch helper, stock APK opcode map) are under [`docs/`](docs/)
+([`APK_ANALYSIS.md`](docs/APK_ANALYSIS.md)) and
 [`third_party/`](third_party/README.md).
 
 ## Install

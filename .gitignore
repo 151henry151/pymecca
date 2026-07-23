@@ -10,3 +10,7 @@ venv/
 
 # Large binary — fetch with third_party/apk/fetch-apk.sh
 third_party/apk/*.apk
+# Local decompile trees (hundreds of MiB)
+third_party/apk/jadx-out/
+third_party/apk/csharp-il/
+third_party/apk/tools/

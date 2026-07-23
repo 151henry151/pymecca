@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 # "vendor UART" characteristics of the CC254x/HM-1x style BLE modules
 # this era of toys used.
 WRITE_CHAR_CANDIDATES = (
+    # Stock Meccanoid Android app (Unity BluetoothLE): service FFF0, write FFF2
+    "0000fff2-0000-1000-8000-00805f9b34fb",
+    # Older / alternate Bluegiga-style UUIDs seen in community tools
     "0000ffe9-0000-1000-8000-00805f9b34fb",
     "0000ffe1-0000-1000-8000-00805f9b34fb",
 )

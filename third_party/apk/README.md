@@ -22,6 +22,11 @@ Also recorded in `SHA256SUMS`.
 Permissions of interest (from `aapt dump badging`): Bluetooth,
 Bluetooth admin, coarse location.
 
-Next step for pymecca: decompile with `jadx` / `apktool` and map BLE writes
-to the `0x08` / `0x0C` / `0x0D` / `0x11` / `0x19` / `0x1C` family already
-implemented in `pymecca/protocol.py`.
+Findings are in [`docs/APK_ANALYSIS.md`](../../docs/APK_ANALYSIS.md).
+
+Local decompile (gitignored):
+
+```bash
+# jadx → third_party/apk/jadx-out
+# ikdasm Assembly-CSharp.dll → third_party/apk/csharp-il/
+```

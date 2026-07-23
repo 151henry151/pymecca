@@ -102,10 +102,16 @@ below are from the **robot's perspective**, listed right → left:
 
 So left → right on the robot: yellow (3), green (2), red (1), blue (0).
 
-## Behaviours / speech (`behaviour …`, opcode `0x19`)
+## Behaviours / presets (`behaviour …`, opcode `0x19` = `MB_PlayPreset`)
 
-Canned sounds and phrases live here — not free-form TTS. Frames are
-`0x19` plus up to 17 argument bytes (see `pymecca.protocol.behaviour_frame`).
+Canned sounds and phrases live here — not free-form TTS. The stock app
+names this opcode **`MB_PlayPreset`** (see [`APK_ANALYSIS.md`](APK_ANALYSIS.md)).
+App frames are `0x19`, **preset index**, **sub** (usually `0`), then zeros
++ checksum. pymecca’s `behaviour ID` probes use index=`ID`, sub=`0`.
+
+**Do not confuse** preset index `0x15` (PlayPreset → shutdown on this unit)
+with opcode **`0x15` `MB_PlayLIM`** (LIM playback), which is a different
+command.
 
 ### Voice UI (on-robot, not BLE)
 
