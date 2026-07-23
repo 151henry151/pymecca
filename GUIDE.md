@@ -129,7 +129,39 @@ pymecca repl       # type protocol commands interactively, e.g.:
 The `repl` is the best tool for learning what your robot's servo numbers and
 directions actually are — move things one at a time and watch.
 
-## 6. Write your own programs
+## 6. Keep a persistent Bluetooth session
+
+Each one-shot command (`demo`, a short script, etc.) connects, acts, then
+disconnects. The robot announces that, and reconnects can be flaky. For a
+string of commands, start a session once and talk to it with `pymecca do`:
+
+```bash
+pymecca session start C4:BE:84:D4:68:1B   # or omit the address to auto-scan
+pymecca session status
+
+pymecca do raise right arm
+pymecca do lower right arm
+pymecca do eyes red
+pymecca do servo 2 128
+pymecca do stop
+
+pymecca session stop
+```
+
+The session process holds the BLE link and listens on a Unix socket under
+`~/.cache/pymecca/` (override with `--session-dir`). `pymecca do` is a
+short-lived client: it sends one line and exits; the robot stays connected.
+
+Useful aliases (also work in `repl`):
+
+* `raise right arm` / `lower right arm` (and left; optional `the`)
+* `eyes red|green|blue|white|off|yellow|magenta|cyan`
+
+By default `session start` detaches to the background and logs to
+`~/.cache/pymecca/session.log`. Pass `--foreground` to keep it in the
+terminal. If a session is already running, `--force` replaces it.
+
+## 7. Write your own programs
 
 Async (recommended for anything real):
 
@@ -176,7 +208,7 @@ consistent direction.
 
 See `examples/` for complete runnable scripts.
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 **`pymecca scan` shows nothing at all.**
 Bluetooth is off, or (Linux) the adapter is down (`sudo hciconfig hci0 up` /
@@ -225,7 +257,12 @@ Servo direction depends on how each servo was physically assembled into the
 model. Use `pymecca repl` to test each joint; if one is inverted on your
 build, just send `255 - value` for that joint in your code.
 
-## 8. How the protocol works (for the curious)
+**`pymecca do` says there is no live session.**
+Start one with `pymecca session start` (robot on, phone app not connected).
+Check `pymecca session status`. Look at `~/.cache/pymecca/session.log` if a
+background start failed.
+
+## 9. How the protocol works (for the curious)
 
 Every command is a 20-byte BLE write: 18 command bytes followed by a 16-bit
 big-endian checksum (the plain sum of the 18 bytes). The first byte is an

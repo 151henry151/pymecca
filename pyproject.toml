@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pymecca"
-version = "2.0.0"
+version = "2.1.0"
 description = "Unofficial Python library for controlling the Meccano Meccanoid G15 / G15KS robot over Bluetooth LE"
 readme = "README.md"
 license = { file = "LICENSE" }

@@ -8,6 +8,8 @@ Commands:
 * ``pymecca demo ADDRESS``      -- connect and run a short show
 * ``pymecca drive ADDRESS``     -- drive it around with the keyboard
 * ``pymecca repl ADDRESS``      -- interactive command prompt
+* ``pymecca session start``     -- keep a BLE link open in the background
+* ``pymecca do "..."``          -- send one command to the live session
 
 ``ADDRESS`` may be omitted for the connect commands, in which case a
 scan is run first and the first device with "mecc" in its name is used.
@@ -17,13 +19,25 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import inspect
 import logging
 import sys
+from pathlib import Path
 
 from bleak import BleakClient, BleakScanner
 
 from . import protocol
+from .commands import COMMAND_HELP, CommandOutcome, dispatch, format_reply
 from .robot import Meccanoid, discover
+from .session import (
+    SessionServer,
+    cleanup_stale,
+    read_info,
+    send_command,
+    session_is_live,
+    spawn_background,
+    stop_session,
+)
 
 
 def _fail(message: str) -> int:
@@ -236,64 +250,135 @@ async def cmd_drive(args) -> int:
 # ----------------------------------------------------------------------
 # repl
 
-_REPL_HELP = """\
-Commands:
-  servo N VALUE        move servo N (0-7) to VALUE (0-255, 128 = centre)
-  light N COLOUR       set servo N's LED (off/red/green/yellow/blue/magenta/cyan/white)
-  chest N on|off       chest LED N (0-3)
-  eyes R G B           eye colour, each channel 0-7
-  drive LEFT RIGHT     wheel speeds, -255..255 (0 0 stops)
-  stop                 stop the wheels
-  behaviour B [...]    raw opcode-0x19 bytes (experiment!)
-  raw B B B ...        send 18 raw bytes (checksum added for you)
-  help                 this text
-  quit                 disconnect and exit
-"""
-
-
 async def cmd_repl(args) -> int:
     address = await _resolve_address(args.address)
     if address is None:
         return 1
     print("Connecting...")
     async with Meccanoid(address, write_char=args.write_char) as bot:
-        print(_REPL_HELP)
+        print(COMMAND_HELP)
         loop = asyncio.get_running_loop()
         while True:
             try:
                 line = await loop.run_in_executor(None, input, "mecca> ")
             except (EOFError, KeyboardInterrupt):
                 break
-            parts = line.strip().split()
-            if not parts:
-                continue
-            cmd, rest = parts[0].lower(), parts[1:]
-            try:
-                if cmd in ("quit", "exit", "q"):
-                    break
-                elif cmd == "help":
-                    print(_REPL_HELP)
-                elif cmd == "servo":
-                    await bot.servo(int(rest[0], 0), int(rest[1], 0))
-                elif cmd == "light":
-                    await bot.servo_light(int(rest[0], 0), rest[1])
-                elif cmd == "chest":
-                    await bot.chest_light(int(rest[0], 0), rest[1].lower() in ("on", "1", "true"))
-                elif cmd == "eyes":
-                    await bot.eye_lights(int(rest[0], 0), int(rest[1], 0), int(rest[2], 0))
-                elif cmd == "drive":
-                    await bot.drive(int(rest[0], 0), int(rest[1], 0))
-                elif cmd == "stop":
-                    await bot.stop()
-                elif cmd == "behaviour":
-                    await bot.behaviour(*(int(x, 0) for x in rest))
-                elif cmd == "raw":
-                    await bot.send_raw(protocol.frame([int(x, 0) for x in rest]))
-                else:
-                    print(f"Unknown command: {cmd} (try 'help')")
-            except (ValueError, IndexError) as e:
-                print(f"Bad arguments: {e}")
+            result = await dispatch(bot, line)
+            if result.outcome == CommandOutcome.QUIT:
+                break
+            if result.outcome == CommandOutcome.HELP:
+                print(result.message)
+            elif result.outcome == CommandOutcome.ERROR:
+                print(format_reply(result))
+            elif result.message:
+                print(result.message)
     print("Bye.")
+    return 0
+
+
+# ----------------------------------------------------------------------
+# session / do
+
+def _session_dir(args) -> Path | None:
+    raw = getattr(args, "session_dir", None)
+    return Path(raw) if raw else None
+
+
+async def cmd_session_start(args) -> int:
+    directory = _session_dir(args)
+    if session_is_live(directory):
+        if not args.force:
+            info = read_info(directory) or {}
+            return _fail(
+                f"a session is already running (pid {info.get('pid')}); "
+                "use `pymecca session stop` or pass --force"
+            )
+        print("Stopping existing session (--force)...")
+        stop_session(directory)
+
+    cleanup_stale(directory)
+
+    address = await _resolve_address(args.address)
+    if address is None:
+        return 1
+    if not isinstance(address, str):
+        address = address.address
+
+    if args.foreground:
+        server = SessionServer(
+            address,
+            write_char=args.write_char,
+            directory=directory,
+            connect_timeout=args.timeout,
+        )
+        await server.run()
+        return 0
+
+    # Re-invoke this process in the foreground, detached.
+    argv = [
+        sys.executable,
+        "-m",
+        "pymecca",
+        "session",
+        "start",
+        "--foreground",
+        "--timeout",
+        str(args.timeout),
+        address,
+    ]
+    if args.write_char is not None:
+        argv.extend(["--char", str(args.write_char)])
+    if directory is not None:
+        argv.extend(["--session-dir", str(directory)])
+    try:
+        return spawn_background(argv, directory=directory)
+    except Exception as e:
+        return _fail(str(e))
+
+
+def cmd_session_status(args) -> int:
+    directory = _session_dir(args)
+    if not session_is_live(directory):
+        cleanup_stale(directory)
+        print("No session running.")
+        return 1
+    info = read_info(directory) or {}
+    print(f"pid:     {info.get('pid')}")
+    print(f"address: {info.get('address')}")
+    print(f"socket:  {info.get('socket')}")
+    try:
+        reply = send_command("ping", directory=directory)
+        print(f"ping:    {reply}")
+    except OSError as e:
+        print(f"ping:    error: {e}")
+        return 1
+    return 0
+
+
+def cmd_session_stop(args) -> int:
+    directory = _session_dir(args)
+    message = stop_session(directory)
+    print(message)
+    return 0
+
+
+def cmd_do(args) -> int:
+    directory = _session_dir(args)
+    words = list(args.words)
+    if words and words[0] == "--":
+        words = words[1:]
+    line = " ".join(words)
+    if not line.strip():
+        return _fail("empty command")
+    if not session_is_live(directory):
+        return _fail("no live session; run `pymecca session start` first")
+    try:
+        reply = send_command(line, directory=directory)
+    except OSError as e:
+        return _fail(str(e))
+    print(reply)
+    if reply.startswith("error"):
+        return 1
     return 0
 
 
@@ -349,6 +434,48 @@ def build_parser() -> argparse.ArgumentParser:
     connect_args(p)
     p.set_defaults(func=cmd_repl)
 
+    sess = sub.add_parser("session", help="manage a persistent BLE session")
+    sess_sub = sess.add_subparsers(dest="session_command", required=True)
+
+    def session_dir_arg(p):
+        p.add_argument(
+            "--session-dir",
+            default=None,
+            help="directory for socket/pid files (default: ~/.cache/pymecca)",
+        )
+
+    p = sess_sub.add_parser("start", help="connect and keep the BLE link open")
+    connect_args(p)
+    session_dir_arg(p)
+    p.add_argument(
+        "--foreground",
+        action="store_true",
+        help="run in this terminal instead of detaching to the background",
+    )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="stop an existing session before starting",
+    )
+    p.set_defaults(func=cmd_session_start)
+
+    p = sess_sub.add_parser("status", help="show whether a session is running")
+    session_dir_arg(p)
+    p.set_defaults(func=cmd_session_status)
+
+    p = sess_sub.add_parser("stop", help="disconnect and stop the session")
+    session_dir_arg(p)
+    p.set_defaults(func=cmd_session_stop)
+
+    p = sub.add_parser("do", help="send one command to the live session")
+    session_dir_arg(p)
+    p.add_argument(
+        "words",
+        nargs="+",
+        help="command line, e.g. raise right arm / eyes red",
+    )
+    p.set_defaults(func=cmd_do)
+
     return parser
 
 
@@ -359,7 +486,10 @@ def main(argv: list[str] | None = None) -> int:
         format="%(levelname)s %(name)s: %(message)s",
     )
     try:
-        return asyncio.run(args.func(args)) or 0
+        func = args.func
+        if inspect.iscoroutinefunction(func):
+            return asyncio.run(func(args)) or 0
+        return func(args) or 0
     except KeyboardInterrupt:
         print("\nInterrupted.")
         return 130

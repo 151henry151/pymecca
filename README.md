@@ -17,6 +17,8 @@ longer runs on any current system. This version is:
   connect time instead of hardcoding a handle
 * shipped with a **CLI**: scan for the robot, run a demo, drive it with WASD
   keys, poke the protocol interactively
+* supports a **persistent BLE session** (`pymecca session` + `pymecca do`) so
+  consecutive commands reuse one connection instead of reconnecting each time
 * unit-tested (the protocol layer needs no robot to test)
 
 👉 **New here? Read [GUIDE.md](GUIDE.md) for step-by-step setup with your robot.**
@@ -46,6 +48,13 @@ pymecca demo            # auto-discovers the robot
 pymecca drive           # WASD keyboard driving
 pymecca repl            # interactive protocol prompt
 pymecca explore         # dump the robot's GATT table (troubleshooting)
+
+# Keep one Bluetooth link open, then send commands without reconnecting:
+pymecca session start
+pymecca do raise right arm
+pymecca do lower right arm
+pymecca do eyes green
+pymecca session stop
 ```
 
 From Python, async:
