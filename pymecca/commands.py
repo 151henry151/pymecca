@@ -12,7 +12,6 @@ from enum import Enum, auto
 from typing import Protocol
 
 from . import protocol
-from .protocol import Servo
 
 
 class CommandOutcome(Enum):
@@ -60,6 +59,7 @@ Commands:
   raw B B B ...        send 18 raw bytes (checksum added for you)
   raise|lower left|right arm
   right hand forward   right hand out in front (shoulder centre + elbow front)
+  arms up|hands up     both shoulders to the sky
   help                 this text
   quit                 disconnect and exit (repl / session shutdown from repl)
 """
@@ -76,19 +76,33 @@ _EYE_COLOURS = {
     "cyan": (0, 7, 7),
 }
 
-_ARM_RAISE = 0xFF
-_ARM_LOWER = 0x80
+# Observed on this humanoid build (see docs/SERVO_MAP.md). Stock Servo
+# enum names disagree with the wiring — prefer these slot numbers.
+LEFT_SHOULDER_SLOT = 0
+LEFT_ELBOW_SLOT = 1
+RIGHT_SHOULDER_SLOT = 2
+RIGHT_ELBOW_SLOT = 3
 
-# Observed on this humanoid build (see docs/SERVO_MAP.md): slot numbers,
-# not stock Servo enum names (those disagree with the wiring).
-_RIGHT_SHOULDER_SLOT = 2
-_RIGHT_ELBOW_SLOT = 3
-_RIGHT_HAND_FORWARD_SHOULDER = 0x80
-_RIGHT_HAND_FORWARD_ELBOW = 0x00
+# Shoulder targets (logical values sent through pymecca).
+LEFT_SHOULDER_UP = 0x00
+LEFT_SHOULDER_DOWN = 0xFF
+RIGHT_SHOULDER_UP = 0xFF
+RIGHT_SHOULDER_CENTRE = 0x80
+RIGHT_SHOULDER_DOWN = 0x00
 
-_SHOULDER = {
-    "right": Servo.RIGHT_SHOULDER,
-    "left": Servo.LEFT_SHOULDER,
+# Elbow targets (logical).
+LEFT_ELBOW_FRONT = 0xFF
+LEFT_ELBOW_BACK = 0x00
+RIGHT_ELBOW_FRONT = 0x00
+RIGHT_ELBOW_BACK = 0xFF
+
+ARM_NUDGE_STEP = 0x20
+
+_SHOULDER_POSE = {
+    ("raise", "right"): (RIGHT_SHOULDER_SLOT, RIGHT_SHOULDER_UP),
+    ("lower", "right"): (RIGHT_SHOULDER_SLOT, RIGHT_SHOULDER_CENTRE),
+    ("raise", "left"): (LEFT_SHOULDER_SLOT, LEFT_SHOULDER_UP),
+    ("lower", "left"): (LEFT_SHOULDER_SLOT, LEFT_SHOULDER_DOWN),
 }
 
 
@@ -126,25 +140,50 @@ def _parse_arm_alias(parts: list[str]) -> tuple[str, str] | None:
     if len(rest) != 2 or rest[1] != "arm":
         return None
     side = rest[0]
-    if side not in _SHOULDER:
+    if (action, side) not in _SHOULDER_POSE:
         return None
     return action, side
+
+
+def _pose_core(parts: list[str]) -> list[str]:
+    words = [p.lower() for p in parts]
+    return [w for w in words if w not in {"the", "a", "of", "you", "your", "put", "both"}]
 
 
 def _is_right_hand_forward(parts: list[str]) -> bool:
     """
     Match short or long forms of the confirmed right-hand-forward pose.
     """
-    words = [p.lower() for p in parts]
-    # Drop filler words so phrasing can vary.
-    core = [w for w in words if w not in {"the", "a", "of", "you", "your", "put"}]
-    if core == ["right", "hand", "forward"]:
-        return True
-    if core == ["right", "hand", "out", "in", "front"]:
-        return True
-    if core == ["right", "hand", "out", "front"]:
-        return True
-    return False
+    core = _pose_core(parts)
+    return core in (
+        ["right", "hand", "forward"],
+        ["right", "hand", "out", "in", "front"],
+        ["right", "hand", "out", "front"],
+    )
+
+
+def _is_arms_up(parts: list[str]) -> bool:
+    core = _pose_core(parts)
+    return core in (
+        ["arms", "up"],
+        ["hands", "up"],
+        ["hands", "in", "the", "air"],
+        ["hands", "in", "air"],
+    )
+
+
+def clamp_servo(value: int) -> int:
+    return max(0x00, min(0xFF, int(value)))
+
+
+async def apply_right_hand_forward(bot: RobotCommands) -> None:
+    await bot.servo(RIGHT_SHOULDER_SLOT, RIGHT_SHOULDER_CENTRE)
+    await bot.servo(RIGHT_ELBOW_SLOT, RIGHT_ELBOW_FRONT)
+
+
+async def apply_arms_up(bot: RobotCommands) -> None:
+    await bot.servo(LEFT_SHOULDER_SLOT, LEFT_SHOULDER_UP)
+    await bot.servo(RIGHT_SHOULDER_SLOT, RIGHT_SHOULDER_UP)
 
 
 async def dispatch(bot: RobotCommands, line: str) -> CommandResult:
@@ -163,14 +202,17 @@ async def dispatch(bot: RobotCommands, line: str) -> CommandResult:
         arm = _parse_arm_alias(parts)
         if arm is not None:
             action, side = arm
-            value = _ARM_RAISE if action == "raise" else _ARM_LOWER
-            await bot.servo(_SHOULDER[side], value)
+            slot, value = _SHOULDER_POSE[(action, side)]
+            await bot.servo(slot, value)
             return _ok(f"{action} {side} arm")
 
         if _is_right_hand_forward(parts):
-            await bot.servo(_RIGHT_SHOULDER_SLOT, _RIGHT_HAND_FORWARD_SHOULDER)
-            await bot.servo(_RIGHT_ELBOW_SLOT, _RIGHT_HAND_FORWARD_ELBOW)
+            await apply_right_hand_forward(bot)
             return _ok("right hand forward")
+
+        if _is_arms_up(parts):
+            await apply_arms_up(bot)
+            return _ok("arms up")
 
         if cmd in ("quit", "exit", "q"):
             return CommandResult(CommandOutcome.QUIT)

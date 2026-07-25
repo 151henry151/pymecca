@@ -27,7 +27,24 @@ from pathlib import Path
 from bleak import BleakClient, BleakScanner
 
 from . import protocol
-from .commands import COMMAND_HELP, CommandOutcome, dispatch, format_reply
+from .commands import (
+    ARM_NUDGE_STEP,
+    COMMAND_HELP,
+    LEFT_ELBOW_SLOT,
+    LEFT_SHOULDER_SLOT,
+    LEFT_SHOULDER_UP,
+    RIGHT_ELBOW_FRONT,
+    RIGHT_ELBOW_SLOT,
+    RIGHT_SHOULDER_CENTRE,
+    RIGHT_SHOULDER_SLOT,
+    RIGHT_SHOULDER_UP,
+    CommandOutcome,
+    apply_arms_up,
+    apply_right_hand_forward,
+    clamp_servo,
+    dispatch,
+    format_reply,
+)
 from .robot import Meccanoid, discover
 from .session import (
     SessionServer,
@@ -169,6 +186,11 @@ Driving -- keys:
   w/s : forward / backward       a/d : turn left / right
   space : stop                   1-9 : set speed (x28)
   e : cycle eye colour           q : quit
+
+Arms (this humanoid's observed slots):
+  r/f : right shoulder up / down     t/g : left shoulder up / down
+  y/h : right elbow front / back     u/j : left elbow front / back
+  o   : right hand forward           p   : both arms up
 """
 
 
@@ -221,6 +243,23 @@ async def cmd_drive(args) -> int:
         speed = 150
         eyes = [(7, 0, 0), (0, 7, 0), (0, 0, 7), (7, 7, 7)]
         eye_i = 2
+        # Track logical arm positions so nudge keys can step from here.
+        arms = {
+            LEFT_SHOULDER_SLOT: 0x7F,
+            LEFT_ELBOW_SLOT: 0x80,
+            RIGHT_SHOULDER_SLOT: RIGHT_SHOULDER_CENTRE,
+            RIGHT_ELBOW_SLOT: 0x80,
+        }
+
+        async def set_arm(slot: int, value: int, label: str) -> None:
+            value = clamp_servo(value)
+            arms[slot] = value
+            await bot.servo(slot, value)
+            print(f"{label} = 0x{value:02x}")
+
+        async def nudge(slot: int, delta: int, label: str) -> None:
+            await set_arm(slot, arms[slot] + delta, label)
+
         with _RawKeys() as keys:
             while True:
                 key = (await keys.get()).lower()
@@ -240,6 +279,36 @@ async def cmd_drive(args) -> int:
                 elif key == "e":
                     eye_i = (eye_i + 1) % len(eyes)
                     await bot.eye_lights(*eyes[eye_i])
+                elif key == "r":
+                    # Right shoulder: toward up (0xff).
+                    await nudge(RIGHT_SHOULDER_SLOT, ARM_NUDGE_STEP, "right shoulder")
+                elif key == "f":
+                    await nudge(RIGHT_SHOULDER_SLOT, -ARM_NUDGE_STEP, "right shoulder")
+                elif key == "t":
+                    # Left shoulder: toward up (0x00), so nudge decreases.
+                    await nudge(LEFT_SHOULDER_SLOT, -ARM_NUDGE_STEP, "left shoulder")
+                elif key == "g":
+                    await nudge(LEFT_SHOULDER_SLOT, ARM_NUDGE_STEP, "left shoulder")
+                elif key == "y":
+                    # Right elbow: toward front (0x00).
+                    await nudge(RIGHT_ELBOW_SLOT, -ARM_NUDGE_STEP, "right elbow")
+                elif key == "h":
+                    await nudge(RIGHT_ELBOW_SLOT, ARM_NUDGE_STEP, "right elbow")
+                elif key == "u":
+                    # Left elbow: toward front (0xff).
+                    await nudge(LEFT_ELBOW_SLOT, ARM_NUDGE_STEP, "left elbow")
+                elif key == "j":
+                    await nudge(LEFT_ELBOW_SLOT, -ARM_NUDGE_STEP, "left elbow")
+                elif key == "o":
+                    await apply_right_hand_forward(bot)
+                    arms[RIGHT_SHOULDER_SLOT] = RIGHT_SHOULDER_CENTRE
+                    arms[RIGHT_ELBOW_SLOT] = RIGHT_ELBOW_FRONT
+                    print("right hand forward")
+                elif key == "p":
+                    await apply_arms_up(bot)
+                    arms[LEFT_SHOULDER_SLOT] = LEFT_SHOULDER_UP
+                    arms[RIGHT_SHOULDER_SLOT] = RIGHT_SHOULDER_UP
+                    print("arms up")
                 elif key.isdigit() and key != "0":
                     speed = int(key) * 28
                     print(f"speed = {speed}")

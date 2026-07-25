@@ -14,9 +14,6 @@ from pymecca.commands import (
     format_reply,
     normalize_line,
 )
-from pymecca.protocol import Servo
-
-
 class FakeBot:
     def __init__(self) -> None:
         self.calls: list[tuple] = []
@@ -54,14 +51,22 @@ def test_raise_right_arm_alias():
     bot = FakeBot()
     result = _run(dispatch(bot, "raise right arm"))
     assert result.outcome == CommandOutcome.OK
-    assert bot.calls == [("servo", Servo.RIGHT_SHOULDER, 0xFF)]
+    assert bot.calls == [("servo", 2, 0xFF)]
 
 
 def test_lower_the_left_arm_alias():
     bot = FakeBot()
     result = _run(dispatch(bot, "lower the left arm"))
     assert result.ok
-    assert bot.calls == [("servo", Servo.LEFT_SHOULDER, 0x80)]
+    # Left shoulder is slot 0 on this build; down is toward 0xff.
+    assert bot.calls == [("servo", 0, 0xFF)]
+
+
+def test_raise_left_arm_alias():
+    bot = FakeBot()
+    result = _run(dispatch(bot, "raise left arm"))
+    assert result.ok
+    assert bot.calls == [("servo", 0, 0x00)]
 
 
 def test_right_hand_forward_alias():
@@ -82,6 +87,17 @@ def test_right_hand_forward_short_alias():
     assert bot.calls == [
         ("servo", 2, 0x80),
         ("servo", 3, 0x00),
+    ]
+
+
+def test_arms_up_alias():
+    bot = FakeBot()
+    result = _run(dispatch(bot, "hands up"))
+    assert result.ok
+    assert result.message == "arms up"
+    assert bot.calls == [
+        ("servo", 0, 0x00),
+        ("servo", 2, 0xFF),
     ]
 
 

@@ -67,9 +67,13 @@ Sense is **opposite** the right elbow (mirrored):
 | Pose | Alias | Commands |
 |---|---|---|
 | Right hand out in front | `right hand forward` / `put right hand out in front` | `servo 2 0x80`, `servo 3 0x00` |
+| Both arms up | `arms up` / `hands up` | `servo 0 0x00`, `servo 2 0xff` |
 
-Notes: shoulder at `0xff` is straight up, **not** “hand forward”. Elbow
-must be `0x00` (front) with the shoulder centred.
+Notes: right shoulder at `0xff` is straight up, **not** “hand forward”.
+Elbow must be `0x00` (front) with the shoulder centred for the forward pose.
+
+`pymecca drive` also exposes these as keyboard teleop (`o` / `p`) plus
+per-joint nudge keys (`r`/`f`, `t`/`g`, `y`/`h`, `u`/`j`).
 
 ## Wheels (`drive LEFT RIGHT`)
 

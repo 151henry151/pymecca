@@ -53,14 +53,15 @@ driving):
 
 ```bash
 pymecca demo            # auto-discovers the robot
-pymecca drive           # WASD keyboard driving
+pymecca drive           # WASD driving + arm keys (see on-screen help)
 pymecca repl            # interactive protocol prompt
 pymecca explore         # dump the robot's GATT table (troubleshooting)
 
 # Keep one Bluetooth link open, then send commands without reconnecting:
 pymecca session start
 pymecca do raise right arm
-pymecca do lower right arm
+pymecca do arms up
+pymecca do right hand forward
 pymecca do eyes green
 pymecca session stop
 ```

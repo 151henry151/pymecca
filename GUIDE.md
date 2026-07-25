@@ -118,13 +118,19 @@ space).
 Then have some real fun:
 
 ```bash
-pymecca drive      # drive with W/A/S/D, space = stop, e = eye colour, q = quit
+pymecca drive      # WASD drive + arm keys (see on-screen help); q = quit
 pymecca repl       # type protocol commands interactively, e.g.:
                    #   eyes 7 0 0
                    #   servo 2 255
                    #   drive 150 150
                    #   stop
 ```
+
+`pymecca drive` arm keys (observed slots on this humanoid):
+
+* `r`/`f` right shoulder up/down, `t`/`g` left shoulder up/down
+* `y`/`h` right elbow front/back, `u`/`j` left elbow front/back
+* `o` right hand forward, `p` both arms up
 
 The `repl` is the best tool for learning what your robot's servo numbers and
 directions actually are — move things one at a time and watch.
@@ -156,6 +162,7 @@ Useful aliases (also work in `repl`):
 
 * `raise right arm` / `lower right arm` (and left; optional `the`)
 * `right hand forward` / `put right hand out in front` (shoulder centre + elbow front)
+* `arms up` / `hands up`
 * `eyes red|green|blue|white|off|yellow|magenta|cyan`
 
 By default `session start` detaches to the background and logs to
