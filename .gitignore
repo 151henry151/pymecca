@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Large binary — fetch with third_party/apk/fetch-apk.sh
+third_party/apk/*.apk
+# Local decompile trees (hundreds of MiB)
+third_party/apk/jadx-out/
+third_party/apk/csharp-il/
+third_party/apk/tools/

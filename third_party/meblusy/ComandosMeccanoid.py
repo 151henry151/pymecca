@@ -65,7 +65,7 @@ class Meccanoid(object):
             (0x19, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d)
         
 
-    def connect(self, address='c4:be:84:d4:68:1b'):
+    def connect(self, address='c4:be:84:d4:1b'):
         """
         Connect to the Meccanoid at the given Bluetooth address.
 
@@ -254,3 +254,4 @@ class Meccanoid(object):
         Cap between 0x00 and 0xff.
         """
         return max(0x00, min(0xff, value))
+    
