@@ -67,7 +67,9 @@ Sense is **opposite** the right elbow (mirrored):
 | Pose | Alias | Commands |
 |---|---|---|
 | Right hand out in front | `right hand forward` / `put right hand out in front` | `servo 2 0x80`, `servo 3 0x00` |
+| Left hand out in front | `left hand forward` / `put left hand out in front` | `servo 0 0x80`, `servo 1 0xff` |
 | Both arms up | `arms up` / `hands up` | `servo 0 0x00`, `servo 2 0xff` |
+| Both arms down | `arms down` / `hands down` | `servo 0 0xff`, `servo 2 0x00` |
 
 Notes: right shoulder at `0xff` is straight up, **not** “hand forward”.
 Elbow must be `0x00` (front) with the shoulder centred for the forward pose.
@@ -120,9 +122,9 @@ names this opcode **`MB_PlayPreset`** (see [`APK_ANALYSIS.md`](APK_ANALYSIS.md))
 App frames are `0x19`, **preset index**, **sub** (usually `0`), then zeros
 + checksum. pymecca’s `behaviour ID` probes use index=`ID`, sub=`0`.
 
-**Do not confuse** preset index `0x15` (PlayPreset → shutdown on this unit)
-with opcode **`0x15` `MB_PlayLIM`** (LIM playback), which is a different
-command.
+**Do not confuse** preset index `0x15` (PlayPreset → laser-ready tone on
+this unit) with opcode **`0x15` `MB_PlayLIM`** (LIM playback), which is a
+different command.
 
 ### Voice UI (on-robot, not BLE)
 
@@ -161,7 +163,7 @@ document before sending the next.
 | `0x12` | laser-ready / ?error | Same laser-ready cue (confirmed twice). |
 | `0x13` | laser-ready / ?error | Same laser-ready cue. |
 | `0x14` | laser-ready / ?error | Same laser-ready cue. |
-| `0x15` | shutdown | **Shutdown** cue / noise; **eyes turn off** (power-down or deep sleep — confirm after power cycle). **Do not spam.** |
+| `0x15` | laser-ready / ?error | Same laser-ready / error tone as `0x01`–`0x04` (earlier “shutdown / eyes off” report was a mis-categorization; re-checked 2026-07-24). |
 | `0x16` | laser-ready / ?error | Same laser-ready cue (confirmed twice). |
 | `0x17` | lim-menu-voice | Spoken menu-style list (approx.): **Record LIM**, **LIM library**, **Choose settings**, **Go to settings**, **Help**, **Later**, **Main menu**. (Exact phrasing TBD if re-listened.) |
 | `0x18` | laser-ready / ?error | Same laser-ready cue. |
@@ -175,10 +177,11 @@ document before sending the next.
 | `0x20` | *(none)* | No audible/visible effect. |
 | `0x21` | *(none)* | No audible/visible effect. |
 
-Note: `0x01`–`0x04`, `0x08`, `0x12`–`0x14`, `0x16`, `0x18`, `0x1b`, and
+Note: `0x01`–`0x04`, `0x08`, `0x12`–`0x16`, `0x18`, `0x1b`, and
 single-arg `0x1d` all produce the **same** cue. Hypothesis: generic
 **reject / unrecognized-command** tone — still a guess. `0x05`–`0x07` were
-silent. **`0x15` powers the unit down** (or equivalent).
+silent. No BLE PowerPreset ID found yet that powers the unit off; use the
+physical switch.
 
 ### Batch probe `0x22`–`0x40` (2026-07-22)
 
@@ -192,6 +195,7 @@ points at a specific ID.
 * Multi-arg `0x19` payloads other than the seventeen-`0x1d` wake frame
 * Whether “laser-ready” IDs are really rejects vs a named SFX bank
 * App-triggered behaviours not reachable as single-byte args
+* A real BLE power-off / deep-sleep command (preset `0x15` is not it)
 
 ## How to extend this map
 
@@ -232,8 +236,11 @@ new findings under [Changelog](#changelog) below.
 - 2026-07-22: `0x10` = turn-right-90 (CW).
 - 2026-07-22: `0x11` = turn-right-180 (CW).
 - 2026-07-22: `0x12`–`0x14` = laser-ready again.
-- 2026-07-22: `0x15` = shutdown (eyes off).
+- 2026-07-22: `0x15` recorded as shutdown (eyes off) — later corrected.
 - 2026-07-22: `0x16` = laser-ready; `0x17` = lim-menu-voice list; `0x18` = laser-ready.
+- 2026-07-24: Reclassify `0x15` as laser-ready / error tone (not power-off).
+- 2026-08-09: Add left-hand-forward and both-arms-down pose rows (mirrored
+  from confirmed right-hand / arms-up extremes on this build).
 - 2026-07-22: `0x19`–`0x21` mostly silent; single-arg `0x1d` = laser-ready
   (wake frame is multi-`0x1d`); batch `0x22`–`0x40` no interesting effect.
 - 2026-07-23: Confirmed pose “right hand out in front” =

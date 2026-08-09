@@ -100,7 +100,7 @@ table in [`SERVO_MAP.md`](SERVO_MAP.md) onto **preset IDs**, not onto
 other opcodes. Important corrections:
 
 * CLI `behaviour 0x15` = PlayPreset(index=`0x15`), **not** `MB_PlayLIM`.
-  The shutdown we saw is a **preset** side-effect, not the PlayLIM opcode.
+  On this unit that preset is the laser-ready / error tone (not power-off).
 * Real LIM play uses opcode **`0x15`** with `buf[1] = limIndex`
   (`playLIM`).
 

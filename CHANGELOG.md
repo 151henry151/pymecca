@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add a terminal control panel (`pymecca drive` / `pymecca control`) with live link status, on-screen key guide, arrow-key hold-to-drive, arms, and eye colours
+- Add `left hand forward`, `arms down` / `hands down`, and `laser` / `laser ready` command aliases
+- Add control-panel keys `i` (left hand forward), `l` (both arms down), and `k` (laser-ready tone)
+- Make `pymecca control` / `drive` auto-discover the robot when no address is given (last address, then BLE scan)
+- Stop any live `pymecca session` automatically before starting `control` / `drive`
 - Add observed hardware map for this Meccanoid (`docs/SERVO_MAP.md`): arm servo slots, wheels, eye colours, and chest LED positions
 - Add umplesplace Meccanoid lore archive and summary (`docs/UMPLESPLACE.md`, `docs/reference/umplesplace/`)
 - Add Smart Module / Arduino stack catalog (`docs/SMART_MODULE_STACK.md`) and mirror source trees under `third_party/`
@@ -21,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add arm keyboard controls to `pymecca drive` (shoulder/elbow nudges and poses)
 
 ### Changed
+
+- Replace plain `pymecca drive` key logging with a full-screen status panel; accept arrow keys as well as WASD; depend on `pynput` for press/release
+- Point the APK fetch helper at Neil Fraser’s archived `Meccanoid_v4.02.48.apk` and document the 32-bit-only ABI install limit on modern phones
 
 - Record mirrored left/right elbow front/back sense and shoulder up/down extremes in the hardware map
 - Add initial opcode-`0x19` behaviour probing notes (systems-check speech; shutdown risk)
@@ -35,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Map behaviour `0x10` as an in-place ~90° right / clockwise turn
 - Map behaviour `0x11` as an in-place ~180° clockwise turn
 - Map behaviour `0x12`–`0x14` as the same laser-ready / possible-error cue
-- Map behaviour `0x15` as shutdown (eyes off)
+- Map behaviour `0x15` as laser-ready / error tone (correct earlier shutdown miscategorization)
 - Map behaviour `0x16` as laser-ready; `0x17` as LIM menu voice list; `0x18` as laser-ready
 - Map behaviour `0x19`–`0x21` and batch `0x22`–`0x40` as no interesting effect; note single-arg `0x1d` vs multi-`0x1d` wake
 - Record confirmed “right hand out in front” pose in the hardware map (not shoulder-up `0xff`)

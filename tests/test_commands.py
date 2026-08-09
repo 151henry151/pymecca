@@ -101,6 +101,36 @@ def test_arms_up_alias():
     ]
 
 
+def test_left_hand_forward_alias():
+    bot = FakeBot()
+    result = _run(dispatch(bot, "left hand forward"))
+    assert result.ok
+    assert result.message == "left hand forward"
+    assert bot.calls == [
+        ("servo", 0, 0x80),
+        ("servo", 1, 0xFF),
+    ]
+
+
+def test_arms_down_alias():
+    bot = FakeBot()
+    result = _run(dispatch(bot, "arms down"))
+    assert result.ok
+    assert result.message == "arms down"
+    assert bot.calls == [
+        ("servo", 0, 0xFF),
+        ("servo", 2, 0x00),
+    ]
+
+
+def test_laser_ready_alias():
+    bot = FakeBot()
+    result = _run(dispatch(bot, "laser ready"))
+    assert result.ok
+    assert result.message == "laser ready"
+    assert bot.calls == [("behaviour", (0x01,))]
+
+
 def test_eyes_named_colour():
     bot = FakeBot()
     result = _run(dispatch(bot, "eyes red"))

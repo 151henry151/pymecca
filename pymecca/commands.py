@@ -59,10 +59,16 @@ Commands:
   raw B B B ...        send 18 raw bytes (checksum added for you)
   raise|lower left|right arm
   right hand forward   right hand out in front (shoulder centre + elbow front)
+  left hand forward    left hand out in front (shoulder centre + elbow front)
   arms up|hands up     both shoulders to the sky
+  arms down|hands down both shoulders lowered
+  laser|laser ready    play the laser-ready / error tone (behaviour 0x01)
   help                 this text
   quit                 disconnect and exit (repl / session shutdown from repl)
 """
+
+# Shared PlayPreset index for the only confirmed SFX so far.
+LASER_READY_BEHAVIOUR = 0x01
 
 _EYE_COLOURS = {
     "off": (0, 0, 0),
@@ -85,6 +91,7 @@ RIGHT_ELBOW_SLOT = 3
 
 # Shoulder targets (logical values sent through pymecca).
 LEFT_SHOULDER_UP = 0x00
+LEFT_SHOULDER_CENTRE = 0x80
 LEFT_SHOULDER_DOWN = 0xFF
 RIGHT_SHOULDER_UP = 0xFF
 RIGHT_SHOULDER_CENTRE = 0x80
@@ -162,6 +169,15 @@ def _is_right_hand_forward(parts: list[str]) -> bool:
     )
 
 
+def _is_left_hand_forward(parts: list[str]) -> bool:
+    core = _pose_core(parts)
+    return core in (
+        ["left", "hand", "forward"],
+        ["left", "hand", "out", "in", "front"],
+        ["left", "hand", "out", "front"],
+    )
+
+
 def _is_arms_up(parts: list[str]) -> bool:
     core = _pose_core(parts)
     return core in (
@@ -169,6 +185,25 @@ def _is_arms_up(parts: list[str]) -> bool:
         ["hands", "up"],
         ["hands", "in", "the", "air"],
         ["hands", "in", "air"],
+    )
+
+
+def _is_arms_down(parts: list[str]) -> bool:
+    core = _pose_core(parts)
+    return core in (
+        ["arms", "down"],
+        ["hands", "down"],
+        ["hands", "at", "sides"],
+        ["hands", "at", "the", "sides"],
+    )
+
+
+def _is_laser_ready(parts: list[str]) -> bool:
+    core = _pose_core(parts)
+    return core in (
+        ["laser"],
+        ["laser", "ready"],
+        ["laser-ready"],
     )
 
 
@@ -181,9 +216,23 @@ async def apply_right_hand_forward(bot: RobotCommands) -> None:
     await bot.servo(RIGHT_ELBOW_SLOT, RIGHT_ELBOW_FRONT)
 
 
+async def apply_left_hand_forward(bot: RobotCommands) -> None:
+    await bot.servo(LEFT_SHOULDER_SLOT, LEFT_SHOULDER_CENTRE)
+    await bot.servo(LEFT_ELBOW_SLOT, LEFT_ELBOW_FRONT)
+
+
 async def apply_arms_up(bot: RobotCommands) -> None:
     await bot.servo(LEFT_SHOULDER_SLOT, LEFT_SHOULDER_UP)
     await bot.servo(RIGHT_SHOULDER_SLOT, RIGHT_SHOULDER_UP)
+
+
+async def apply_arms_down(bot: RobotCommands) -> None:
+    await bot.servo(LEFT_SHOULDER_SLOT, LEFT_SHOULDER_DOWN)
+    await bot.servo(RIGHT_SHOULDER_SLOT, RIGHT_SHOULDER_DOWN)
+
+
+async def apply_laser_ready(bot: RobotCommands) -> None:
+    await bot.behaviour(LASER_READY_BEHAVIOUR)
 
 
 async def dispatch(bot: RobotCommands, line: str) -> CommandResult:
@@ -210,9 +259,21 @@ async def dispatch(bot: RobotCommands, line: str) -> CommandResult:
             await apply_right_hand_forward(bot)
             return _ok("right hand forward")
 
+        if _is_left_hand_forward(parts):
+            await apply_left_hand_forward(bot)
+            return _ok("left hand forward")
+
         if _is_arms_up(parts):
             await apply_arms_up(bot)
             return _ok("arms up")
+
+        if _is_arms_down(parts):
+            await apply_arms_down(bot)
+            return _ok("arms down")
+
+        if _is_laser_ready(parts):
+            await apply_laser_ready(bot)
+            return _ok("laser ready")
 
         if cmd in ("quit", "exit", "q"):
             return CommandResult(CommandOutcome.QUIT)

@@ -11,6 +11,7 @@ license = { file = "LICENSE" }
 requires-python = ">=3.9"
 dependencies = [
     "bleak>=0.21",
+    "pynput>=1.7",
 ]
 keywords = ["meccanoid", "meccano", "robot", "bluetooth", "ble", "bleak"]
 classifiers = [

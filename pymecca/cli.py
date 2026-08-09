@@ -6,7 +6,8 @@ Commands:
 * ``pymecca scan``              -- find your Meccanoid's address
 * ``pymecca explore ADDRESS``   -- dump the robot's GATT table (debugging)
 * ``pymecca demo ADDRESS``      -- connect and run a short show
-* ``pymecca drive ADDRESS``     -- drive it around with the keyboard
+* ``pymecca drive ADDRESS``     -- terminal control panel (arrows / arms / eyes)
+* ``pymecca control ADDRESS``   -- same as ``drive``
 * ``pymecca repl ADDRESS``      -- interactive command prompt
 * ``pymecca session start``     -- keep a BLE link open in the background
 * ``pymecca do "..."``          -- send one command to the live session
@@ -27,24 +28,8 @@ from pathlib import Path
 from bleak import BleakClient, BleakScanner
 
 from . import protocol
-from .commands import (
-    ARM_NUDGE_STEP,
-    COMMAND_HELP,
-    LEFT_ELBOW_SLOT,
-    LEFT_SHOULDER_SLOT,
-    LEFT_SHOULDER_UP,
-    RIGHT_ELBOW_FRONT,
-    RIGHT_ELBOW_SLOT,
-    RIGHT_SHOULDER_CENTRE,
-    RIGHT_SHOULDER_SLOT,
-    RIGHT_SHOULDER_UP,
-    CommandOutcome,
-    apply_arms_up,
-    apply_right_hand_forward,
-    clamp_servo,
-    dispatch,
-    format_reply,
-)
+from .commands import COMMAND_HELP, CommandOutcome, dispatch, format_reply
+from .control_ui import run_control
 from .robot import Meccanoid, discover
 from .session import (
     SessionServer,
@@ -179,141 +164,23 @@ async def cmd_demo(args) -> int:
 
 
 # ----------------------------------------------------------------------
-# drive (keyboard teleop)
-
-_DRIVE_HELP = """\
-Driving -- keys:
-  w/s : forward / backward       a/d : turn left / right
-  space : stop                   1-9 : set speed (x28)
-  e : cycle eye colour           q : quit
-
-Arms (this humanoid's observed slots):
-  r/f : right shoulder up / down     t/g : left shoulder up / down
-  y/h : right elbow front / back     u/j : left elbow front / back
-  o   : right hand forward           p   : both arms up
-"""
-
-
-class _RawKeys:
-    """
-    Cross-platform single-keypress reader ('q', 'w', ...).
-    """
-
-    def __enter__(self):
-        if sys.platform == "win32":
-            return self
-        import termios
-        import tty
-
-        self._fd = sys.stdin.fileno()
-        self._old = termios.tcgetattr(self._fd)
-        tty.setcbreak(self._fd)
-        return self
-
-    def __exit__(self, *exc):
-        if sys.platform != "win32":
-            import termios
-
-            termios.tcsetattr(self._fd, termios.TCSADRAIN, self._old)
-
-    async def get(self) -> str:
-        loop = asyncio.get_running_loop()
-        if sys.platform == "win32":
-            import msvcrt
-
-            def read() -> str:
-                ch = msvcrt.getch()
-                return ch.decode(errors="ignore")
-
-        else:
-
-            def read() -> str:
-                return sys.stdin.read(1)
-
-        return await loop.run_in_executor(None, read)
-
+# drive / control (terminal teleop panel)
 
 async def cmd_drive(args) -> int:
-    address = await _resolve_address(args.address)
-    if address is None:
-        return 1
-    print("Connecting...")
-    async with Meccanoid(address, write_char=args.write_char) as bot:
-        print(_DRIVE_HELP)
-        speed = 150
-        eyes = [(7, 0, 0), (0, 7, 0), (0, 0, 7), (7, 7, 7)]
-        eye_i = 2
-        # Track logical arm positions so nudge keys can step from here.
-        arms = {
-            LEFT_SHOULDER_SLOT: 0x7F,
-            LEFT_ELBOW_SLOT: 0x80,
-            RIGHT_SHOULDER_SLOT: RIGHT_SHOULDER_CENTRE,
-            RIGHT_ELBOW_SLOT: 0x80,
-        }
+    # A background session holds the BLE link exclusively — free it first
+    # so control can connect without the user remembering `session stop`.
+    stop_session(_session_dir(args))
 
-        async def set_arm(slot: int, value: int, label: str) -> None:
-            value = clamp_servo(value)
-            arms[slot] = value
-            await bot.servo(slot, value)
-            print(f"{label} = 0x{value:02x}")
-
-        async def nudge(slot: int, delta: int, label: str) -> None:
-            await set_arm(slot, arms[slot] + delta, label)
-
-        with _RawKeys() as keys:
-            while True:
-                key = (await keys.get()).lower()
-                if key == "q":
-                    await bot.stop()
-                    break
-                elif key == "w":
-                    await bot.drive(speed, speed)
-                elif key == "s":
-                    await bot.drive(-speed, -speed)
-                elif key == "a":
-                    await bot.drive(-speed, speed)
-                elif key == "d":
-                    await bot.drive(speed, -speed)
-                elif key == " ":
-                    await bot.stop()
-                elif key == "e":
-                    eye_i = (eye_i + 1) % len(eyes)
-                    await bot.eye_lights(*eyes[eye_i])
-                elif key == "r":
-                    # Right shoulder: toward up (0xff).
-                    await nudge(RIGHT_SHOULDER_SLOT, ARM_NUDGE_STEP, "right shoulder")
-                elif key == "f":
-                    await nudge(RIGHT_SHOULDER_SLOT, -ARM_NUDGE_STEP, "right shoulder")
-                elif key == "t":
-                    # Left shoulder: toward up (0x00), so nudge decreases.
-                    await nudge(LEFT_SHOULDER_SLOT, -ARM_NUDGE_STEP, "left shoulder")
-                elif key == "g":
-                    await nudge(LEFT_SHOULDER_SLOT, ARM_NUDGE_STEP, "left shoulder")
-                elif key == "y":
-                    # Right elbow: toward front (0x00).
-                    await nudge(RIGHT_ELBOW_SLOT, -ARM_NUDGE_STEP, "right elbow")
-                elif key == "h":
-                    await nudge(RIGHT_ELBOW_SLOT, ARM_NUDGE_STEP, "right elbow")
-                elif key == "u":
-                    # Left elbow: toward front (0xff).
-                    await nudge(LEFT_ELBOW_SLOT, ARM_NUDGE_STEP, "left elbow")
-                elif key == "j":
-                    await nudge(LEFT_ELBOW_SLOT, -ARM_NUDGE_STEP, "left elbow")
-                elif key == "o":
-                    await apply_right_hand_forward(bot)
-                    arms[RIGHT_SHOULDER_SLOT] = RIGHT_SHOULDER_CENTRE
-                    arms[RIGHT_ELBOW_SLOT] = RIGHT_ELBOW_FRONT
-                    print("right hand forward")
-                elif key == "p":
-                    await apply_arms_up(bot)
-                    arms[LEFT_SHOULDER_SLOT] = LEFT_SHOULDER_UP
-                    arms[RIGHT_SHOULDER_SLOT] = RIGHT_SHOULDER_UP
-                    print("arms up")
-                elif key.isdigit() and key != "0":
-                    speed = int(key) * 28
-                    print(f"speed = {speed}")
-    print("Bye.")
-    return 0
+    # Address is optional: the control panel tries the last successful
+    # address, then BLE-scans for a name containing "mecc".
+    address = args.address
+    if address is not None and not isinstance(address, str):
+        address = address.address
+    return await run_control(
+        address,
+        write_char=args.write_char,
+        connect_timeout=args.timeout,
+    )
 
 
 # ----------------------------------------------------------------------
@@ -476,7 +343,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_scan)
 
     def connect_args(p):
-        p.add_argument("address", nargs="?", help="robot address (scans if omitted)")
+        p.add_argument(
+            "address",
+            nargs="?",
+            help="robot address (optional: scans for a Meccanoid if omitted)",
+        )
         p.add_argument("--timeout", type=float, default=20.0, help="connect timeout")
         p.add_argument(
             "--char",
@@ -495,7 +366,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--wheels", action="store_true", help="also test the wheels (robot will move!)")
     p.set_defaults(func=cmd_demo)
 
-    p = sub.add_parser("drive", help="drive the robot with the keyboard (WASD)")
+    p = sub.add_parser(
+        "drive",
+        help="terminal control panel (auto-finds robot if address omitted)",
+    )
+    connect_args(p)
+    p.set_defaults(func=cmd_drive)
+
+    p = sub.add_parser(
+        "control",
+        help="same as drive: on-screen teleop panel (auto-discovers)",
+    )
     connect_args(p)
     p.set_defaults(func=cmd_drive)
 

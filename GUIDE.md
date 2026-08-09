@@ -118,7 +118,7 @@ space).
 Then have some real fun:
 
 ```bash
-pymecca drive      # WASD drive + arm keys (see on-screen help); q = quit
+pymecca control    # (or `pymecca drive`) teleop panel; address optional — auto-discovers
 pymecca repl       # type protocol commands interactively, e.g.:
                    #   eyes 7 0 0
                    #   servo 2 255
@@ -126,11 +126,19 @@ pymecca repl       # type protocol commands interactively, e.g.:
                    #   stop
 ```
 
-`pymecca drive` arm keys (observed slots on this humanoid):
+`pymecca control` (no address needed) stops any background `pymecca session`
+first, tries the last successful robot address, then BLE-scans for a name
+containing `mecc`. It shows link status and a key map on screen, and uses
+hold-to-drive: keep arrow keys or `w`/`a`/`s`/`d` pressed to move; releasing
+stops the wheels. If the link drops, press `c` to reconnect / rescan. Arm / eye
+keys are listed in the panel (observed slots on this humanoid include):
 
 * `r`/`f` right shoulder up/down, `t`/`g` left shoulder up/down
 * `y`/`h` right elbow front/back, `u`/`j` left elbow front/back
-* `o` right hand forward, `p` both arms up
+* `i` left hand forward, `o` right hand forward
+* `p` both arms up, `l` both arms down
+* `k` laser-ready tone
+* `e` cycle eyes; `z`/`x`/`c`/`v`/`b`/… for named colours
 
 The `repl` is the best tool for learning what your robot's servo numbers and
 directions actually are — move things one at a time and watch.
@@ -161,8 +169,9 @@ short-lived client: it sends one line and exits; the robot stays connected.
 Useful aliases (also work in `repl`):
 
 * `raise right arm` / `lower right arm` (and left; optional `the`)
-* `right hand forward` / `put right hand out in front` (shoulder centre + elbow front)
-* `arms up` / `hands up`
+* `right hand forward` / `left hand forward` (shoulder centre + elbow front)
+* `arms up` / `hands up` / `arms down` / `hands down`
+* `laser` / `laser ready` (PlayPreset `0x01` tone)
 * `eyes red|green|blue|white|off|yellow|magenta|cyan`
 
 By default `session start` detaches to the background and logs to

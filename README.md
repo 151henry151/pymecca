@@ -53,7 +53,7 @@ driving):
 
 ```bash
 pymecca demo            # auto-discovers the robot
-pymecca drive           # WASD driving + arm keys (see on-screen help)
+pymecca control         # terminal panel (auto-discovers; alias: drive)
 pymecca repl            # interactive protocol prompt
 pymecca explore         # dump the robot's GATT table (troubleshooting)
 
