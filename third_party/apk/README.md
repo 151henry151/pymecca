@@ -8,6 +8,10 @@ Canonical public archive (Neil Fraser, 2021-09-13):
 
 https://neil.fraser.name/software/meccanoid/Android/Meccanoid_v4.02.48.apk
 
+Neil also hosts older builds (`v1.0` … `v2.4`, `v4.02.45`, `v4.02.47`) in the
+same directory; he reports pre-`4.02.48` apps as non-functional (API / dead
+login). Full Neil Fraser inventory: [`docs/NEIL_FRASER.md`](../../docs/NEIL_FRASER.md).
+
 The APK itself is **not committed** (~97 MiB; GitHub warns above 50 MiB).
 Fetch it locally:
 

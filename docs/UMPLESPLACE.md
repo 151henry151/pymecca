@@ -7,8 +7,8 @@ under [`docs/reference/umplesplace/`](reference/umplesplace/).
 These posts are **not** a BLE opcode map. They are useful for power,
 firmware, app quirks, Robot vs Drone mode, and LIM behaviour.
 
-Also mirrored: [Neil Fraser’s 2021 firmware notes](reference/neil-fraser-2021-09-13.md)
-(linked from Meccanoid-Revival).
+Also mirrored: [Neil Fraser’s archive notes](NEIL_FRASER.md) (2021 firmware
+updater post, 2016 workshop posts, firmware JSON catalogs).
 
 ## Post index
 
