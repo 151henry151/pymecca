@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Neil Fraser archive inventory (`docs/NEIL_FRASER.md`) and mirror firmware updater JSON catalogs under `third_party/neil-fraser/`
 - Add a terminal control panel (`pymecca drive` / `pymecca control`) with live link status, on-screen key guide, arrow-key hold-to-drive, arms, and eye colours
 - Add `left hand forward`, `arms down` / `hands down`, and `laser` / `laser ready` command aliases
 - Add control-panel keys `i` (left hand forward), `l` (both arms down), and `k` (laser-ready tone)
@@ -24,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `right hand forward` / `put right hand out in front` pose alias (shoulder `0x80`, elbow `0x00`)
 - Add `arms up` / `hands up` pose alias
 - Add arm keyboard controls to `pymecca drive` (shoulder/elbow nudges and poses)
+
+### Removed
+
+- Remove the GitHub Actions CI workflow (`.github/workflows/ci.yml`)
 
 ### Changed
 
